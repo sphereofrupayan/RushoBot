@@ -5,13 +5,13 @@ import os
 from pathlib import Path
 import requests
 
-# Load .env file
+
 env_path = Path(__file__).parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
 app = Flask(__name__, static_folder=".", static_url_path="")
 
-# API Keys
+
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 CRICKET_API_KEY = os.getenv("CRICKET_API_KEY")
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
@@ -29,9 +29,6 @@ def chat():
     user_message = data.get("message", "")
     message = user_message.lower()
 
-    # ==========================
-    # Cricket
-    # ==========================
     if "score" in message or "cricket" in message or "match" in message:
 
         try:
@@ -57,9 +54,7 @@ def chat():
 
         return jsonify({"reply": reply})
 
-    # ==========================
-    # Weather
-    # ==========================
+    
     weather_keywords = [
         "weather",
         "temperature",
@@ -112,9 +107,7 @@ def chat():
 
         return jsonify({"reply": reply})
 
-    # ==========================
-    # Groq AI
-    # ==========================
+    
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[
