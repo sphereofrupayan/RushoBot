@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rusho.Bot - My Virtual Assistant</title>
+    <link rel="shortcut icon" type="image/x-icon" href="R.png">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav>
+        <div class="left side">Rusho Bot</div>
+        <div class="right side">V 2.0</div>
+    </nav>
+    <video autoplay muted loop id="bgVideo">
+        <source src="backgroundfull.mp4" type="video/mp4">
+    </video>
+    <div id="historyPanel">
+        <img src="rushobot.png" alt="Mini Logo" class="side-mini-logo">
+        <div class="history-header">
+            <h3>Conversation History</h3>
+            <button id="clearHistoryBtn" title="Clear All History">Delete All</button>
+        </div>
+        <ul id="historyList"></ul>
+    </div>
+    <div id="responsePanel">
+        <div class="response-header">
+            <h3>Assistant Response</h3>
+        </div>
+        <div id="responseText">Waiting for command...</div>
+    </div>
+    <img src="rushobot.png" alt="logo" id="logo">
+    <h1>
+        I'm <span id="name">Rusho.Bot</span>,
+        Your <span id="va">Virtual Assistant</span>
+    </h1>
+    <img src="voice.gif" alt="voice" id="voice">
+    <div id="textInputContainer">
+        <input type="text" id="textInput" placeholder="Type your command...">
+        <button id="sendBtn">Send</button>
+    </div>
+    <button id="btn">
+        <img src="mic.svg" alt="mic">
+        <span id="content">Click to Speak</span>
+    </button>
+    <footer>
+        <div class="social-links">
+            <a href="https://github.com/DevRC891/RushoBot" target="_blank" rel="noopener noreferrer">
+                <img src="logos/github.png" alt="Github" class="social-icon">
+            </a>
+            <a href="#" onclick="copyMail()">
+                <img src="logos/Gmail.png" alt="Gmail" class="social-icon">
+            </a>
+            <a href="https://www.instagram.com/rushooo___/" target="_blank" rel="noopener noreferrer">
+                <img src="logos/instagram.png" alt="Instagram" class="social-icon">
+            </a>
+        </div>
+    </footer>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
