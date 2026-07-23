@@ -6,7 +6,28 @@ let sendBtn = document.querySelector("#sendBtn");
 let historyList = document.querySelector("#historyList");
 let clearHistoryBtn = document.querySelector("#clearHistoryBtn");
 let responseText = document.querySelector("#responseText");
-
+let userLocation = { lat: null, lon: null };
+let conversationHistory = [];
+let newChatBtn = document.querySelector("#newChatBtn");
+function getUserLocation() {
+    return new Promise((resolve) => {
+        if (!navigator.geolocation) {
+            resolve();
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                userLocation.lat = position.coords.latitude;
+                userLocation.lon = position.coords.longitude;
+                resolve();
+            },
+            () => {
+                resolve(); 
+            },
+            { timeout: 5000 }
+        );
+    });
+}
 function speak(text) {
     if (responseText) {
         responseText.innerText = text;
@@ -18,7 +39,9 @@ function speak(text) {
     text_speak.lang = "hi-IN";
     window.speechSynthesis.speak(text_speak);
 }
-
+function hasWord(text, ...words) {
+    return words.some(word => new RegExp(`\\b${word}\\b`, "i").test(text));
+}
 function wishMe() {
     let day = new Date();
     let hours = day.getHours();
@@ -74,6 +97,7 @@ function addToHistory(command) {
     if (history.length > 20) history.pop();
     localStorage.setItem("rushoBotHistory", JSON.stringify(history));
     updateHistoryUI();
+
 }
 
 function deleteHistoryItem(index) {
@@ -103,7 +127,16 @@ window.addEventListener('load', () => {
     historyList = document.querySelector("#historyList");
     clearHistoryBtn = document.querySelector("#clearHistoryBtn");
     responseText = document.querySelector("#responseText");
-    
+    newChatBtn = document.querySelector("#newChatBtn");
+
+if (newChatBtn) {
+    newChatBtn.addEventListener("click", () => {
+        conversationHistory = [];
+        responseText.innerText = "New chat started. Waiting for command...";
+        speak("Starting a new chat. How can I help you?");
+    });
+}
+    getUserLocation();
     updateHistoryUI();
     wishMe();
     speak("I am Rusho Bot, your virtual assistant. How can I help you?");
@@ -141,36 +174,61 @@ window.addEventListener('load', () => {
         });
     }
 });
+async function fetchCricketScore(message) {
+    try {
+        const response = await fetch("/cricket-score", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: message })
+        });
+        const data = await response.json();
 
+        if (data.error) {
+            speak("Sorry, I couldn't fetch the score right now.");
+        } else {
+            speak(data.reply);
+        }
+    } catch (err) {
+        console.error(err);
+        speak("Sorry, I couldn't reach the score service.");
+    }
+}
 async function askAI(message) {
 
+    conversationHistory.push({ role: "user", content: message });
+
     const response = await fetch("/chat", {
-
         method: "POST",
-
         headers: {
             "Content-Type": "application/json"
         },
-
         body: JSON.stringify({
-            message: message
+            message: message,
+            history: conversationHistory,
+            lat: userLocation.lat,
+            lon: userLocation.lon
         })
-
     });
 
     const data = await response.json();
 
-    return data.reply;
+    conversationHistory.push({ role: "assistant", content: data.reply });
 
+    // keep memory from growing forever — trim to last 20 messages
+    if (conversationHistory.length > 20) {
+        conversationHistory = conversationHistory.slice(-20);
+    }
+
+    return data.reply;
 }
 
 function takecommand(message) {
     btn.style.display = "flex";
     voice.style.display = "none";
     
-    if (message.includes("hello") || message.includes("hi")) {
-        speak("Hello, what can I help you?");
-    } 
+    if (hasWord(message, "hello", "hi")) {
+    speak("Hello, what can I help you?");
+}
     else if (message.includes("who are you")) {
         speak("I am Rusho Bot, your virtual assistant, created by Rupayan Sir.");
     }
@@ -215,7 +273,7 @@ function takecommand(message) {
         speak("Opening WhatsApp...");
         window.open("https://web.whatsapp.com", "_blank");
     }
-    else if(message.includes("what time is it") || message.includes("current time") || message.includes("time now")|| message.includes("tell me the time") || message.includes("can you tell me the time")|| message.includes("could you tell me the time") || message.includes("do you know the time") || message.includes("what's the time") || message.includes("what is the time")||message.includes("time")) {
+    else if (hasWord(message, "what time is it", "current time", "time now", "tell me the time", "can you tell me the time", "could you tell me the time", "do you know the time", "what's the time", "what is the time", "time")) {
         let now = new Date();
         let hours = now.getHours();
         let minutes = now.getMinutes();
@@ -226,16 +284,13 @@ function takecommand(message) {
         let timeString = `${hours}:${minutes} ${ampm}`;
         speak("The current time is " + timeString);
     }
-    else if (message.includes("what's the date") || message.includes("what is the date") || message.includes("current date") || message.includes("date now") || message.includes("tell me the date") || message.includes("can you tell me the date") || message.includes("could you tell me the date") || message.includes("do you know the date") || message.includes("date")) {
+    else if (hasWord(message, "what's the date", "what is the date", "current date", "date now", "tell me the date", "can you tell me the date", "could you tell me the date", "do you know the date", "date")) {
         let now = new Date();
         let options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         let dateString = now.toLocaleDateString('en-US', options);
         speak("Today's date is " + dateString);
     }
-    else if(message.includes("weather") || message.includes("what's the weather") || message.includes("what is the weather") || message.includes("current weather") || message.includes("weather now") || message.includes("tell me the weather") || message.includes("can you tell me the weather") || message.includes("could you tell me the weather") || message.includes("do you know the weather")) {
-        speak("I currently don't have access to weather information, but you can check it on Google.");
-        window.open("https://www.google.com/search?q=weather", "_blank");
-    }
+    
     else if (message.includes("who created you") || message.includes("your creator") || message.includes("who is your creator") || message.includes("who made you")) {
         speak("I was created by Rupayan Chattaraj, a talented web developer with a passion for technology.");
     }
@@ -254,6 +309,10 @@ function takecommand(message) {
     else if (message.includes("what is your name") || message.includes("your name")) {
         speak("My name is Rusho Bot, your virtual assistant.");
     }
+    else if (hasWord(message, "cricket score", "match score", "live score", "icc score", "cricket match", "score update", "current score")) {
+    responseText.innerText = "Fetching latest scores...";
+    fetchCricketScore(message);
+}
     else if (message.includes("take screenshot") || message.includes("screenshot")) {
         speak("Taking screenshot");
 
@@ -289,20 +348,20 @@ function takecommand(message) {
     else {
 
     let finalMessage = message
-        .replace("rusho bot", "")
-        .replace("rusho", "")
-        .replace("bot", "")
-        .replace("ruso got", "")
-        .replace("ruso bought", "")
-        .replace("rusho got", "")
-        .replace("rusho bought", "")
-        .replace("search", "")
-        .replace("google", "")
-        .replace("search for", "")
-        .replace("google for", "")
-        .replace("search about", "")
-        .replace("google about", "")
-        .trim();
+    .replace(/\brusho bot\b/gi, "")
+    .replace(/\brusho\b/gi, "")
+    .replace(/\bbot\b/gi, "")
+    .replace(/\bruso got\b/gi, "")
+    .replace(/\bruso bought\b/gi, "")
+    .replace(/\brusho got\b/gi, "")
+    .replace(/\brusho bought\b/gi, "")
+    .replace(/\bsearch for\b/gi, "")
+    .replace(/\bgoogle for\b/gi, "")
+    .replace(/\bsearch about\b/gi, "")
+    .replace(/\bgoogle about\b/gi, "")
+    .replace(/\bsearch\b/gi, "")
+    .replace(/\bgoogle\b/gi, "")
+    .trim();
 
     responseText.innerText = "Thinking...";
 
@@ -328,3 +387,386 @@ function copyMail() {
             alert("Failed to copy email.");
         });
 }
+
+
+const TOOL_CONFIG = {
+    resume: {
+        title: "Resume Analyzer",
+        fields: [
+            { type: "file", name: "file", label: "Upload your resume (PDF)", accept: ".pdf" }
+        ],
+        endpoint: "/resume-analyze",
+        submitLabel: "Analyze Resume",
+        isFormData: true
+    },
+    notes: {
+        title: "Notes Summarizer",
+        fields: [
+            { type: "textarea", name: "text", label: "Paste your notes", placeholder: "Paste the notes you want summarized...", rows: 8 }
+        ],
+        endpoint: "/notes-summarize",
+        submitLabel: "Summarize Notes"
+    },
+    code: {
+        title: "Code Reviewer",
+        fields: [
+            { type: "text", name: "language", label: "Language (optional)", placeholder: "e.g. Python, JavaScript" },
+            { type: "textarea", name: "code", label: "Paste your code", placeholder: "Paste the code you want reviewed...", rows: 10 }
+        ],
+        endpoint: "/code-review",
+        submitLabel: "Review Code"
+    },
+    email: {
+        title: "Email Writer",
+        fields: [
+            { type: "select", name: "tone", label: "Tone", options: ["Professional", "Friendly", "Formal", "Persuasive"] },
+            { type: "textarea", name: "details", label: "What should the email say?", placeholder: "e.g. Ask my manager for two days of leave next week...", rows: 6 }
+        ],
+        endpoint: "/email-write",
+        submitLabel: "Generate Email"
+    },
+    planner: {
+        title: "Study Planner",
+        fields: [
+            { type: "text", name: "subject", label: "Subject / Exam", placeholder: "e.g. Oracle SQL fundamentals" },
+            { type: "text", name: "duration", label: "Timeframe", placeholder: "e.g. 2 weeks, 5 days" },
+            { type: "textarea", name: "goal", label: "Goal (optional)", placeholder: "e.g. Pass the certification exam", rows: 4 }
+        ],
+        endpoint: "/study-planner",
+        submitLabel: "Create Plan"
+    },
+    quiz: {
+        title: "Quiz Generator",
+        fields: [
+            { type: "text", name: "topic", label: "Topic", placeholder: "e.g. Oracle multitenant architecture" },
+            { type: "select", name: "difficulty", label: "Difficulty", options: ["Easy", "Medium", "Hard"] },
+            { type: "select", name: "count", label: "Number of questions", options: ["3", "5", "10"] }
+        ],
+        endpoint: "/quiz-generate",
+        submitLabel: "Generate Quiz",
+        isQuiz: true
+    },
+    pdf: {
+        title: "PDF Chat",
+        isPdfChat: true
+    },
+    translator: {
+        title: "Translator",
+        fields: [
+            { type: "text", name: "target_language", label: "Translate to", placeholder: "e.g. French, Hindi, Spanish" },
+            { type: "textarea", name: "text", label: "Text to translate", placeholder: "Paste the text you want translated...", rows: 6 }
+        ],
+        endpoint: "/translate",
+        submitLabel: "Translate"
+    },
+    grammar: {
+        title: "Grammar Checker",
+        fields: [
+            { type: "textarea", name: "text", label: "Paste your text", placeholder: "Paste the text you want checked...", rows: 6 }
+        ],
+        endpoint: "/grammar-check",
+        submitLabel: "Check Grammar"
+    }
+};
+
+const toolModalOverlay = document.getElementById("toolModalOverlay");
+const toolModalTitle = document.getElementById("toolModalTitle");
+const toolModalBody = document.getElementById("toolModalBody");
+const toolModalClose = document.getElementById("toolModalClose");
+
+function closeToolModal() {
+    toolModalOverlay.classList.remove("active");
+    toolModalBody.innerHTML = "";
+}
+
+if (toolModalClose) {
+    toolModalClose.addEventListener("click", closeToolModal);
+}
+
+if (toolModalOverlay) {
+    toolModalOverlay.addEventListener("click", (e) => {
+        if (e.target === toolModalOverlay) closeToolModal();
+    });
+}
+
+function buildField(field) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "tool-field";
+
+    const label = document.createElement("label");
+    label.textContent = field.label;
+    wrapper.appendChild(label);
+
+    let input;
+    if (field.type === "textarea") {
+        input = document.createElement("textarea");
+        input.rows = field.rows || 5;
+        input.placeholder = field.placeholder || "";
+    } else if (field.type === "select") {
+        input = document.createElement("select");
+        field.options.forEach(opt => {
+            const option = document.createElement("option");
+            option.value = opt;
+            option.textContent = opt;
+            input.appendChild(option);
+        });
+    } else if (field.type === "file") {
+        input = document.createElement("input");
+        input.type = "file";
+        input.accept = field.accept || "";
+    } else {
+        input = document.createElement("input");
+        input.type = "text";
+        input.placeholder = field.placeholder || "";
+    }
+    input.dataset.fieldName = field.name;
+    wrapper.appendChild(input);
+    return wrapper;
+}
+
+function openToolModal(toolKey) {
+    const config = TOOL_CONFIG[toolKey];
+    if (!config) return;
+
+    toolModalTitle.textContent = config.title;
+    toolModalBody.innerHTML = "";
+    toolModalOverlay.classList.add("active");
+
+    if (config.isPdfChat) {
+        buildPdfChatModal();
+        return;
+    }
+
+    const form = document.createElement("div");
+    config.fields.forEach(field => form.appendChild(buildField(field)));
+
+    const submitBtn = document.createElement("button");
+    submitBtn.className = "tool-submit-btn";
+    submitBtn.textContent = config.submitLabel;
+
+    const resultBox = document.createElement("div");
+
+    submitBtn.addEventListener("click", async () => {
+        resultBox.className = "";
+        resultBox.textContent = "";
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Working...";
+
+        try {
+            let response;
+
+            if (config.isFormData) {
+                const formData = new FormData();
+                config.fields.forEach(field => {
+                    const el = form.querySelector(`[data-field-name="${field.name}"]`);
+                    if (field.type === "file") {
+                        if (el.files[0]) formData.append(field.name, el.files[0]);
+                    } else {
+                        formData.append(field.name, el.value);
+                    }
+                });
+                response = await fetch(config.endpoint, { method: "POST", body: formData });
+            } else {
+                const payload = {};
+                config.fields.forEach(field => {
+                    const el = form.querySelector(`[data-field-name="${field.name}"]`);
+                    payload[field.name] = el.value;
+                });
+                response = await fetch(config.endpoint, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+            }
+
+            const data = await response.json();
+
+            if (!response.ok || data.error) {
+                resultBox.className = "tool-error";
+                resultBox.textContent = data.error || "Something went wrong.";
+            } else if (config.isQuiz) {
+                renderQuiz(resultBox, data.questions || []);
+            } else {
+                resultBox.className = "tool-result";
+                resultBox.textContent = data.reply;
+            }
+        } catch (err) {
+            resultBox.className = "tool-error";
+            resultBox.textContent = "Could not reach the server.";
+        }
+
+        submitBtn.disabled = false;
+        submitBtn.textContent = config.submitLabel;
+    });
+
+    toolModalBody.appendChild(form);
+    toolModalBody.appendChild(submitBtn);
+    toolModalBody.appendChild(resultBox);
+}
+
+function renderQuiz(container, questions) {
+    container.className = "";
+    container.innerHTML = "";
+
+    if (!questions.length) {
+        container.className = "tool-error";
+        container.textContent = "No questions were generated. Try again.";
+        return;
+    }
+
+    questions.forEach((q, i) => {
+        const qWrap = document.createElement("div");
+        qWrap.className = "quiz-question";
+
+        const qText = document.createElement("p");
+        qText.className = "q-text";
+        qText.textContent = `${i + 1}. ${q.question}`;
+        qWrap.appendChild(qText);
+
+        (q.options || []).forEach(opt => {
+            const optBtn = document.createElement("button");
+            optBtn.className = "quiz-option";
+            optBtn.textContent = opt;
+            optBtn.addEventListener("click", () => {
+                const buttons = qWrap.querySelectorAll(".quiz-option");
+                buttons.forEach(b => (b.disabled = true));
+                if (opt === q.answer) {
+                    optBtn.classList.add("correct");
+                } else {
+                    optBtn.classList.add("incorrect");
+                    buttons.forEach(b => {
+                        if (b.textContent === q.answer) b.classList.add("correct");
+                    });
+                }
+            });
+            qWrap.appendChild(optBtn);
+        });
+
+        container.appendChild(qWrap);
+    });
+}
+
+function buildPdfChatModal() {
+    let pdfContext = "";
+
+    const uploadWrap = document.createElement("div");
+    uploadWrap.className = "tool-field";
+    const uploadLabel = document.createElement("label");
+    uploadLabel.textContent = "Upload a PDF to chat with";
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = ".pdf";
+    uploadWrap.appendChild(uploadLabel);
+    uploadWrap.appendChild(fileInput);
+
+    const uploadBtn = document.createElement("button");
+    uploadBtn.className = "tool-submit-btn";
+    uploadBtn.textContent = "Upload PDF";
+
+    const statusBox = document.createElement("div");
+    statusBox.style.display = "none";
+
+    const questionWrap = document.createElement("div");
+    questionWrap.className = "tool-field";
+    questionWrap.style.display = "none";
+    questionWrap.style.marginTop = "18px";
+    const questionLabel = document.createElement("label");
+    questionLabel.textContent = "Ask a question about the document";
+    const questionInput = document.createElement("input");
+    questionInput.type = "text";
+    questionInput.placeholder = "e.g. Summarize section 2";
+    questionWrap.appendChild(questionLabel);
+    questionWrap.appendChild(questionInput);
+
+    const askBtn = document.createElement("button");
+    askBtn.className = "tool-submit-btn";
+    askBtn.textContent = "Ask";
+    askBtn.style.display = "none";
+
+    const answerBox = document.createElement("div");
+
+    uploadBtn.addEventListener("click", async () => {
+        if (!fileInput.files[0]) return;
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = "Uploading...";
+        statusBox.style.display = "block";
+        statusBox.className = "tool-result";
+        statusBox.textContent = "Reading PDF...";
+
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+
+        try {
+            const response = await fetch("/pdf-upload", { method: "POST", body: formData });
+            const data = await response.json();
+
+            if (!response.ok || data.error) {
+                statusBox.className = "tool-error";
+                statusBox.textContent = data.error || "Could not read the PDF.";
+            } else {
+                pdfContext = data.text;
+                statusBox.textContent = "PDF loaded. Ask a question below.";
+                questionWrap.style.display = "block";
+                askBtn.style.display = "block";
+            }
+        } catch (err) {
+            statusBox.className = "tool-error";
+            statusBox.textContent = "Could not reach the server.";
+        }
+
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = "Upload PDF";
+    });
+
+    askBtn.addEventListener("click", async () => {
+        const question = questionInput.value.trim();
+        if (!question || !pdfContext) return;
+
+        askBtn.disabled = true;
+        askBtn.textContent = "Thinking...";
+        answerBox.className = "tool-result";
+        answerBox.textContent = "Thinking...";
+
+        try {
+            const response = await fetch("/pdf-chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ context: pdfContext, question: question })
+            });
+            const data = await response.json();
+
+            if (!response.ok || data.error) {
+                answerBox.className = "tool-error";
+                answerBox.textContent = data.error || "Something went wrong.";
+            } else {
+                answerBox.className = "tool-result";
+                answerBox.textContent = data.reply;
+            }
+        } catch (err) {
+            answerBox.className = "tool-error";
+            answerBox.textContent = "Could not reach the server.";
+        }
+
+        askBtn.disabled = false;
+        askBtn.textContent = "Ask";
+    });
+
+    toolModalBody.appendChild(uploadWrap);
+    toolModalBody.appendChild(uploadBtn);
+    toolModalBody.appendChild(statusBox);
+    toolModalBody.appendChild(questionWrap);
+    toolModalBody.appendChild(askBtn);
+    toolModalBody.appendChild(answerBox);
+}
+
+document.querySelectorAll('.tool-card').forEach(card => {
+    card.addEventListener('click', () => {
+        const tool = card.dataset.tool;
+        if (tool === 'chat') {
+            document.getElementById('textInput')?.focus();
+        } else {
+            openToolModal(tool);
+        }
+    });
+});
+
