@@ -769,4 +769,394 @@ document.querySelectorAll('.tool-card').forEach(card => {
         }
     });
 });
+const toolCards = document.querySelectorAll('.tool-card');
+const cardObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+            const card = entry.target;
+            const index = Array.from(toolCards).indexOf(card);
+            card.style.transitionDelay = `${index * 90}ms`;
+            card.classList.add('visible');
+            cardObserver.unobserve(card);
+        }
+    });
+}, { threshold: 0.15 });
+const featuresHeader = document.querySelector('.features-header');
+if (featuresHeader) {
+    const headerObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                headerObserver.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.2 });
+    headerObserver.observe(featuresHeader);
+}
 
+const featureCards = document.querySelectorAll('.feature-card');
+const featureCardObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+            const card = entry.target;
+            const index = Array.from(featureCards).indexOf(card);
+            card.style.transitionDelay = `${index * 100}ms`;
+            card.classList.add('visible');
+            featureCardObserver.unobserve(card);
+        }
+    });
+}, { threshold: 0.2 });
+
+featureCards.forEach(card => featureCardObserver.observe(card));
+toolCards.forEach(card => cardObserver.observe(card));
+
+const dotsCanvas = document.getElementById('toolsDotsCanvas');
+
+if (dotsCanvas) {
+    const dctx = dotsCanvas.getContext('2d');
+    let dotsWrapEl = document.getElementById('toolsHeaderCanvasWrap');
+    let dcW = 0, dcH = 0;
+    let dotMouseX = -9999, dotMouseY = -9999;
+
+    function resizeDotsCanvas() {
+        const rect = dotsWrapEl.getBoundingClientRect();
+        dcW = dotsCanvas.width = rect.width;
+        dcH = dotsCanvas.height = rect.height;
+    }
+    resizeDotsCanvas();
+    window.addEventListener('resize', resizeDotsCanvas);
+
+    dotsWrapEl.addEventListener('mousemove', (e) => {
+        const rect = dotsWrapEl.getBoundingClientRect();
+        dotMouseX = e.clientX - rect.left;
+        dotMouseY = e.clientY - rect.top;
+    });
+    dotsWrapEl.addEventListener('mouseleave', () => {
+        dotMouseX = -9999;
+        dotMouseY = -9999;
+    });
+
+    const DOT_COUNT = 170;
+
+const dots = Array.from({ length: DOT_COUNT }, () => ({
+    x: Math.random() * dcW,
+    y: Math.random() * dcH,
+
+   
+    vx: (Math.random() - 0.5) * 1.8,
+    vy: (Math.random() - 0.5) * 1.8,
+
+
+    r: Math.random() * 1.5 + 0.5,
+
+
+    baseAlpha: Math.random() * 0.4 + 0.25
+}));
+
+function drawDots() {
+    dctx.clearRect(0, 0, dcW, dcH);
+
+    dots.forEach(dot => {
+
+        const dx = dot.x - dotMouseX;
+        const dy = dot.y - dotMouseY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        const repelRadius = 120;
+
+        if (dist < repelRadius) {
+
+            const force =
+                Math.pow((repelRadius - dist) / repelRadius, 2);
+
+            const angle = Math.atan2(dy, dx);
+
+            dot.vx += Math.cos(angle) * force * 1.4;
+            dot.vy += Math.sin(angle) * force * 1.4;
+        }
+
+        
+        dot.vx *= 0.965;
+        dot.vy *= 0.965;
+
+     
+        const maxSpeed = 2.8;
+
+        const speed = Math.sqrt(
+            dot.vx * dot.vx +
+            dot.vy * dot.vy
+        );
+
+        if (speed > maxSpeed) {
+            dot.vx = (dot.vx / speed) * maxSpeed;
+            dot.vy = (dot.vy / speed) * maxSpeed;
+        }
+
+        dot.x += dot.vx;
+        dot.y += dot.vy;
+
+       
+        const margin = 20;
+
+if (dot.x < -margin) dot.x = dcW + margin;
+if (dot.x > dcW + margin) dot.x = -margin;
+
+if (dot.y < -margin) dot.y = dcH + margin;
+if (dot.y > dcH + margin) dot.y = -margin;
+
+        
+        dctx.beginPath();
+        dctx.arc(
+            dot.x,
+            dot.y,
+            dot.r,
+            0,
+            Math.PI * 2
+        );
+
+        dctx.fillStyle =
+            `rgba(255,255,255,${dot.baseAlpha})`;
+
+        dctx.shadowColor =
+            'rgba(255,255,255,0.35)';
+
+        dctx.shadowBlur = 2;
+
+        dctx.fill();
+    });
+
+    requestAnimationFrame(drawDots);
+}
+
+drawDots();
+} else {
+    console.warn('toolsDotsCanvas not found in DOM');
+}
+document.querySelectorAll('.tilt-card').forEach(card => {
+    const shine = card.querySelector('.tilt-shine');
+    let targetRotX = 0, targetRotY = 0, targetScale = 1, targetY = 0;
+    let curRotX = 0, curRotY = 0, curScale = 1, curY = 0;
+    let hovering = false;
+    let lastMouseX = 0, lastMouseY = 0;
+
+    card.addEventListener('mousemove', (e) => {
+        if (!card.classList.contains('visible')) return;
+
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        lastMouseX = x;
+        lastMouseY = y;
+
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+
+        targetRotY = ((x - centerX) / centerX) * 12;
+        targetRotX = -((y - centerY) / centerY) * 12;
+        targetScale = 1.04;
+        targetY = -6;
+        hovering = true;
+    });
+
+    card.addEventListener('mouseleave', () => {
+        targetRotX = 0;
+        targetRotY = 0;
+        targetScale = 1;
+        targetY = 0;
+        hovering = false;
+    });
+
+    function animateTilt() {
+        
+        curRotX += (targetRotX - curRotX) * 0.25;
+        curRotY += (targetRotY - curRotY) * 0.25;
+        curScale += (targetScale - curScale) * 0.2;
+        curY += (targetY - curY) * 0.2;
+
+        card.style.transform = `translateY(${curY}px) perspective(1000px) rotateX(${curRotX}deg) rotateY(${curRotY}deg) scale(${curScale})`;
+
+        if (shine) {
+            shine.style.background = hovering
+                ? `radial-gradient(circle at ${lastMouseX}px ${lastMouseY}px, rgba(255,255,255,0.28), transparent 60%)`
+                : `radial-gradient(circle at 50% 50%, rgba(255,255,255,0), transparent 60%)`;
+        }
+
+        requestAnimationFrame(animateTilt);
+    }
+    animateTilt();
+});
+const spotlightCanvas = document.getElementById('cursorSpotlight');
+
+if (spotlightCanvas) {
+    const sctx = spotlightCanvas.getContext('2d');
+    let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
+
+    function resizeSpotlight() {
+        spotlightCanvas.width = window.innerWidth;
+        spotlightCanvas.height = window.innerHeight;
+    }
+    resizeSpotlight();
+    window.addEventListener('resize', resizeSpotlight);
+
+    window.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+    });
+    window.addEventListener('touchmove', (e) => {
+        if (e.touches[0]) {
+            mouseX = e.touches[0].clientX;
+            mouseY = e.touches[0].clientY;
+        }
+    });
+
+    const POINT_COUNT = 22;
+    const trail = Array.from({ length: POINT_COUNT }, () => ({ x: mouseX, y: mouseY }));
+
+    function updateTrail() {
+        trail[0].x += (mouseX - trail[0].x) * 0.35;
+        trail[0].y += (mouseY - trail[0].y) * 0.35;
+
+        for (let i = 1; i < trail.length; i++) {
+            const ease = 0.32 - i * 0.006;
+            trail[i].x += (trail[i - 1].x - trail[i].x) * Math.max(ease, 0.08);
+            trail[i].y += (trail[i - 1].y - trail[i].y) * Math.max(ease, 0.08);
+        }
+    }
+
+    function drawSmokeLine() {
+        sctx.clearRect(0, 0, spotlightCanvas.width, spotlightCanvas.height);
+
+        for (let i = 0; i < trail.length - 1; i++) {
+            const p1 = trail[i];
+            const p2 = trail[i + 1];
+            const t = i / trail.length;
+
+            const width = Math.max(10 * (1 - t), 0.5);
+            const alpha = Math.max(0.5 * (1 - t), 0);
+
+            const gradient = sctx.createLinearGradient(p1.x, p1.y, p2.x, p2.y);
+            gradient.addColorStop(0, `rgba(176, 91, 167, ${alpha})`);
+            gradient.addColorStop(1, `rgba(105, 125, 255, ${alpha * 0.7})`);
+
+            sctx.strokeStyle = gradient;
+            sctx.lineWidth = width;
+            sctx.lineCap = 'round';
+            sctx.shadowColor = 'rgba(176, 91, 167, 0.6)';
+            sctx.shadowBlur = 12 * (1 - t);
+
+            sctx.beginPath();
+            sctx.moveTo(p1.x, p1.y);
+            sctx.lineTo(p2.x, p2.y);
+            sctx.stroke();
+        }
+
+        const head = trail[0];
+        const glow = sctx.createRadialGradient(head.x, head.y, 0, head.x, head.y, 40);
+        glow.addColorStop(0, 'rgba(176, 91, 167, 0.45)');
+        glow.addColorStop(1, 'rgba(176, 91, 167, 0)');
+        sctx.fillStyle = glow;
+        sctx.beginPath();
+        sctx.arc(head.x, head.y, 40, 0, Math.PI * 2);
+        sctx.fill();
+
+        updateTrail();
+        requestAnimationFrame(drawSmokeLine);
+    }
+    drawSmokeLine();
+} else {
+    console.warn('cursorSpotlight canvas not found in DOM');
+}
+const constellationCanvas = document.getElementById('constellationCanvas');
+
+if (constellationCanvas) {
+    const cctx = constellationCanvas.getContext('2d');
+    let featuresSectionEl = document.getElementById('featuresSection');
+    let ccW = 0, ccH = 0;
+    let constMouseX = -9999, constMouseY = -9999;
+    const BLEED = 40;
+
+    function resizeConstellation() {
+        const rect = featuresSectionEl.getBoundingClientRect();
+        ccW = constellationCanvas.width = rect.width + BLEED * 2;
+        ccH = constellationCanvas.height = rect.height + BLEED * 2;
+    }
+    resizeConstellation();
+    window.addEventListener('resize', resizeConstellation);
+
+    featuresSectionEl.addEventListener('mousemove', (e) => {
+        const rect = featuresSectionEl.getBoundingClientRect();
+        constMouseX = (e.clientX - rect.left) + BLEED;
+        constMouseY = (e.clientY - rect.top) + BLEED;
+    });
+    featuresSectionEl.addEventListener('mouseleave', () => {
+        constMouseX = -9999;
+        constMouseY = -9999;
+    });
+
+    const NODE_COUNT = 55;
+    const LINK_DIST = 130;
+    const nodes = Array.from({ length: NODE_COUNT }, () => ({
+        x: Math.random() * ccW,
+        y: Math.random() * ccH,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5,
+        r: Math.random() * 1.4 + 1
+    }));
+
+    function drawConstellation() {
+        cctx.clearRect(0, 0, ccW, ccH);
+
+        nodes.forEach(node => {
+            const dx = constMouseX - node.x;
+            const dy = constMouseY - node.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 160) {
+                node.x += dx * 0.01;
+                node.y += dy * 0.01;
+            }
+
+            node.x += node.vx;
+            node.y += node.vy;
+
+            if (node.x < 0) node.x = ccW;
+            if (node.x > ccW) node.x = 0;
+            if (node.y < 0) node.y = ccH;
+            if (node.y > ccH) node.y = 0;
+        });
+
+ 
+        for (let i = 0; i < nodes.length; i++) {
+            for (let j = i + 1; j < nodes.length; j++) {
+                const a = nodes[i], b = nodes[j];
+                const dx = a.x - b.x;
+                const dy = a.y - b.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < LINK_DIST) {
+                    const alpha = (1 - dist / LINK_DIST) * 0.35;
+                    cctx.strokeStyle = `rgba(176, 91, 167, ${alpha})`;
+                    cctx.lineWidth = 1;
+                    cctx.beginPath();
+                    cctx.moveTo(a.x, a.y);
+                    cctx.lineTo(b.x, b.y);
+                    cctx.stroke();
+                }
+            }
+        }
+
+ 
+        nodes.forEach(node => {
+            cctx.beginPath();
+            cctx.arc(node.x, node.y, node.r, 0, Math.PI * 2);
+            cctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            cctx.shadowColor = 'rgba(105, 125, 255, 0.6)';
+            cctx.shadowBlur = 4;
+            cctx.fill();
+        });
+
+        requestAnimationFrame(drawConstellation);
+    }
+    drawConstellation();
+} else {
+    console.warn('constellationCanvas not found in DOM');
+}
