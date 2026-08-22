@@ -58,15 +58,7 @@ nav {
     font-size: 16px;
 }
 
-#bgVideo {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    z-index: -1;
-}
+
 
 #historyPanel {
     position: fixed;
@@ -416,11 +408,25 @@ footer p {
 }
 
 @media(max-width: 768px) {
+    #logo { order: 1; }
+    h1 { order: 2; }
+    #voice { order: 3; }
+    #toolsSection { order: 4; }
+
     #historyPanel, #responsePanel {
+        order: 5;
         width: 100%;
-        height: 150px;
+        max-height: 180px;
         position: static;
+        border-radius: 14px;
+        margin-bottom: 12px;
+        padding: 18px 16px;
     }
+
+    #textInputContainer { order: 6; }
+    #btn { order: 7; }
+    footer { order: 8; }
+
     body {
         padding-bottom: 20px;
     }
@@ -500,29 +506,36 @@ footer p {
 .tool-card {
     background: var(--card-bg);
     border: 1px solid var(--border-color);
-    border-radius: 16px;
+    border-radius: 18px;
     padding: 26px 22px;
     text-align: left;
     cursor: pointer;
-    transition: transform 0.25s ease, background 0.25s ease, border-color 0.25s ease;
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                background 0.25s ease, border-color 0.25s ease,
+                box-shadow 0.3s ease;
+}
+
+.tool-card.visible {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .tool-card:hover {
     transform: translateY(-4px);
     background: rgba(255, 255, 255, 0.14);
     border-color: rgba(176, 91, 167, 0.4);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(176, 91, 167, 0.15);
 }
 
 .tool-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
-    background: var(--primary-gradient);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 16px;
-    color: #ffffff;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.tool-card:hover .tool-icon {
+    transform: scale(1.08) rotate(-3deg);
 }
 
 .tool-icon svg {
@@ -804,4 +817,208 @@ footer p {
 #newChatBtn:hover {
     background: rgba(105, 125, 255, 0.3);
     transform: scale(1.05);
+}
+#cursorSpotlight {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    mix-blend-mode: screen;
+}
+#toolsHeaderCanvasWrap {
+    position: relative;
+    padding: 50px 20px 40px 20px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    border-radius: 24px;
+}
+
+#toolsDotsCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+#toolsHeaderCanvasWrap .tools-heading,
+#toolsHeaderCanvasWrap .tools-subheading {
+    position: relative;
+    z-index: 2;
+}
+
+.tools-heading {
+    font-family: "Bungee", sans-serif;
+    color: #ffffff;
+    font-size: 2rem;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+}
+
+.tools-subheading {
+    font-family: "Poppins", sans-serif;
+    color: var(--text-muted);
+    font-size: 14.5px;
+    font-weight: 500;
+    margin-bottom: 0;
+}
+.tools-grid {
+    perspective: 1400px;
+}
+
+.tilt-card {
+    transform-style: preserve-3d;
+    will-change: transform;
+    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.3s ease;
+}
+
+.tilt-card-inner {
+    position: relative;
+    transform-style: preserve-3d;
+}
+
+.tilt-card .tool-icon {
+    transform: translateZ(35px);
+}
+
+.tilt-card h3 {
+    transform: translateZ(25px);
+}
+
+.tilt-card p {
+    transform: translateZ(15px);
+}
+
+.tilt-shine {
+    position: absolute;
+    inset: -26px -22px;
+    background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.22), transparent 60%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    border-radius: 18px;
+}
+
+.tilt-card:hover .tilt-shine {
+    opacity: 1;
+}
+#featuresSection {
+    position: relative;
+    width: 100%;
+    max-width: 1100px;
+    margin: 20px auto 60px auto;
+    padding: 50px 20px;
+    text-align: center;
+    overflow: visible;
+}
+
+#constellationCanvas {
+    position: absolute;
+    top: -40px;
+    left: -40px;
+    width: calc(100% + 80px);
+    height: calc(100% + 80px);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.features-header {
+    position: relative;
+    z-index: 2;
+    margin-bottom: 40px;
+}
+
+.features-heading {
+    font-family: "Bungee", sans-serif;
+    color: #ffffff;
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+}
+
+.features-subheading {
+    font-family: "Poppins", sans-serif;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.features-grid {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+}
+.features-header {
+    position: relative;
+    z-index: 2;
+    margin-bottom: 40px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.features-header.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+.feature-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 24px 18px;
+    text-align: left;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                background 0.3s ease, border-color 0.3s ease;
+}
+
+.feature-card.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.feature-card:hover {
+    transform: translateY(-4px);
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(105, 125, 255, 0.35);
+}
+
+.feature-card h3 {
+    font-family: "Poppins", sans-serif;
+    font-weight: 600;
+    color: #ffffff;
+    font-size: 15px;
+    margin-bottom: 8px;
+}
+
+.feature-card p {
+    font-family: "Poppins", sans-serif;
+    color: var(--text-muted);
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+
+@media(max-width: 768px) {
+    .features-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    .features-heading {
+        font-size: 1.4rem;
+    }
+}
+
+@media(max-width: 480px) {
+    .features-grid {
+        grid-template-columns: 1fr;
+    }
 }
