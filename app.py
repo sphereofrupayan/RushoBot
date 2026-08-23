@@ -13,12 +13,11 @@ load_dotenv(dotenv_path=env_path)
 
 app = Flask(__name__, static_folder=".", static_url_path="")
 
-
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 CRICKET_API_KEY = os.getenv("CRICKET_API_KEY")
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 
-GROQ_MODEL = "llama-3.3-70b-versatile"
+GROQ_MODEL = "openai/gpt-oss-120b"
 
 
 def ask_groq(system_prompt, user_prompt):
